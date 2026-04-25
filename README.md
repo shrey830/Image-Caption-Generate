@@ -1,9 +1,9 @@
-# Image Caption Generator Web App
+# 🖼️ Image Caption Generator Web App
 
 This project is a full-stack AI-powered Image Caption Generator that allows users to upload images and automatically generate meaningful captions using deep learning models. It also includes additional features like hashtag generation, image-to-text conversion, and user authentication.
 
 
-## Features
+## 📌Features
 ### Image Captioning
 Upload an image and get an AI-generated descriptive caption.
 ### Image-to-Text Conversion
@@ -18,7 +18,7 @@ Generate captions in different languages.
 Manage users, data, and system content.
 
 
-## Technologies Used
+## 🛠️Technologies Used
 Frontend: HTML, CSS, JavaScript
 Backend: Flask (Python)
 Database: SQLite / SQLAlchemy
@@ -27,3 +27,6 @@ Libraries:
 Transformers (Hugging Face)
 PyTorch
 PIL (Python Imaging Library)
+
+
+
