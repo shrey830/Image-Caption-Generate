@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050810;
+            --surface: #0c1120;
+            --surface2: #111827;
+            --border: rgba(99, 179, 255, 0.12);
+            --accent: #3b82f6;
+            --accent2: #06b6d4;
+            --accent3: #8b5cf6;
+            --danger: #ef4444;
+            --danger2: #ff6b6b;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --glow: rgba(59, 130, 246, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Ambient glow blobs */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blob2 {
+            position: fixed;
+            bottom: -200px;
+            left: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 40px 30px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 50px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px rgba(59,130,246,0.3);
+        }
+
+        .header-title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.2);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            color: #10b981;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99, 179, 255, 0.25);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--grad);
+        }
+
+        .stat-card:nth-child(1) { --grad: linear-gradient(90deg, var(--accent), var(--accent2)); }
+        .stat-card:nth-child(2) { --grad: linear-gradient(90deg, var(--accent3), #ec4899); }
+        .stat-card:nth-child(3) { --grad: linear-gradient(90deg, #10b981, #06b6d4); }
+        .stat-card:nth-child(4) { --grad: linear-gradient(90deg, #f59e0b, #ef4444); }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── SECTION ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .section-title-bar {
+            width: 4px;
+            height: 22px;
+            background: linear-gradient(180deg, var(--accent), var(--accent3));
+            border-radius: 2px;
+        }
+
+        .section-badge {
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: var(--accent2);
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── SEARCH BAR ── */
+        .search-wrap {
+            position: relative;
+            width: 260px;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 14px 9px 36px;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-wrap input:focus { border-color: var(--accent); }
+        .search-wrap input::placeholder { color: var(--muted); }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 50px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: rgba(59,130,246,0.06);
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            padding: 14px 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-align: left;
+            font-weight: 400;
+        }
+
+        th:first-child { width: 70px; text-align: center; }
+        th:last-child { text-align: center; }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(99,179,255,0.06);
+            transition: background 0.15s;
+            animation: fadeIn 0.4s ease both;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(59,130,246,0.04); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        tbody tr:nth-child(1) { animation-delay: 0.05s; }
+        tbody tr:nth-child(2) { animation-delay: 0.1s; }
+        tbody tr:nth-child(3) { animation-delay: 0.15s; }
+        tbody tr:nth-child(4) { animation-delay: 0.2s; }
+        tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+        td {
+            padding: 16px 20px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        td:first-child { text-align: center; }
+        td:last-child { text-align: center; }
+
+        .id-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(99,179,255,0.08);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* ── USER CELL ── */
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 800;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .avatar::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 11px;
+            background: var(--av-grad);
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .username-link {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .username-link:hover { color: var(--accent2); }
+
+        .username-link .arrow {
+            font-size: 11px;
+            color: var(--muted);
+            transition: transform 0.2s, color 0.2s;
+        }
+
+        .username-link:hover .arrow {
+            transform: translateX(3px);
+            color: var(--accent2);
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── EMAIL ── */
+        .email-cell {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* ── DELETE BTN ── */
+        .btn-delete {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: var(--danger2);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239,68,68,0.2);
+            border-color: rgba(239,68,68,0.4);
+            transform: scale(1.03);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-family: 'Space Mono', monospace; font-size: 13px; }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        /* Avatar color variants */
+        .av-0 { background: linear-gradient(135deg, #3b82f6, #8b5cf6); --av-grad: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .av-1 { background: linear-gradient(135deg, #06b6d4, #10b981); --av-grad: linear-gradient(135deg, #06b6d4, #10b981); }
+        .av-2 { background: linear-gradient(135deg, #f59e0b, #ef4444); --av-grad: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .av-3 { background: linear-gradient(135deg, #ec4899, #8b5cf6); --av-grad: linear-gradient(135deg, #ec4899, #8b5cf6); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="blob2"></div>
+
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-icon">🔐</div>
+            <div>
+                <div class="header-title">Admin Control Panel</div>
+                <div class="header-subtitle">System Management Interface</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status-pill">
+                <div class="status-dot"></div>
+                SYSTEM ONLINE
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value">{{ users|length }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🖼️</div>
+            <div class="stat-value">{{ captions|length }}</div>
+            <div class="stat-label">Captions Generated</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-value">3</div>
+            <div class="stat-label">Languages Active</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-value">100%</div>
+            <div class="stat-label">Uptime</div>
+        </div>
+    </div>
+
+    <!-- USERS TABLE -->
+    <div class="section-header">
+        <div class="section-title">
+            <div class="section-title-bar"></div>
+            Registered Users
+            <span class="section-badge">{{ users|length }} total</span>
+        </div>
+        <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search users..." oninput="filterTable()">
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Joined</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><span class="id-badge">{{ user.id }}</span></td>
+                    <td>
+                        <div class="user-cell">
+                            <div class="avatar av-{{ loop.index0 % 4 }}">
+                                {{ user.username[0].upper() }}
+                            </div>
+                            <div>
+                                <a href="{{ url_for('view_user_history', user_id=user.id) }}" class="username-link">
+                                    {{ user.username }}
+                                    <span class="arrow">→</span>
+                                </a>
+                                <div class="user-role">
+                                    {% if user.username.lower() in ['shrey', 'jainam'] %}
+                                        ⭐ Administrator
+                                    {% else %}
+                                        👤 Member
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="email-cell">{{ user.email }}</span></td>
+                    <td>
+                        <span style="font-family:'Space Mono',monospace; font-size:12px; color:var(--muted);">
+                            — 
+                        </span>
+                    </td>
+                    <td>
+                        <a class="btn-delete"
+                           href="{{ url_for('delete_user', user_id=user.id) }}"
+                           onclick="return confirm('Delete {{ user.username }} and all their data?')">
+                            🗑 Delete
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <div class="empty-icon">👻</div>
+                            <p>No users registered yet.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FOOTER -->
+    <!-- <div class="footer">
+        CAPTION AI · ADMIN v2.0 · RESTRICTED ACCESS
+    </div> -->
+
+</div>
+
+<script>
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#userTable tbody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,446 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+    :root {
+        --bg: #050810;
+        --surface: #0c1120;
+        --surface2: #111827;
+        --border: rgba(99, 179, 255, 0.12);
+        --accent: #3b82f6;
+        --accent2: #06b6d4;
+        --accent3: #8b5cf6;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --text: #e2e8f0;
+        --muted: #64748b;
+    }
+
+    body {
+        font-family: 'Syne', sans-serif !important;
+        background: var(--bg) !important;
+        color: var(--text) !important;
+    }
+
+    .hist-page {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .hist-page::before {
+        content: '';
+        position: fixed; inset: 0;
+        background-image:
+            linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-tr {
+        position: fixed; top: -200px; right: -200px;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-bl {
+        position: fixed; bottom: -200px; left: -100px;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .hist-content { position: relative; z-index: 1; }
+
+    /* ── HEADER ── */
+    .hist-header {
+        display: flex; align-items: center; gap: 16px;
+        margin-bottom: 40px; padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .hist-logo {
+        width: 48px; height: 48px;
+        background: linear-gradient(135deg, var(--warning), var(--danger));
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 20px rgba(245,158,11,0.35);
+    }
+
+    .hist-title {
+        font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 0%, #fbbf24 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hist-subtitle {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted);
+        letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* ── SEARCH CARD ── */
+    .search-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px; overflow: hidden;
+        margin-bottom: 32px; position: relative;
+    }
+
+    .search-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--warning), var(--danger), var(--accent3));
+    }
+
+    .search-card-body { padding: 32px; }
+
+    .search-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--muted);
+        margin-bottom: 12px; display: block;
+    }
+
+    .search-wrap {
+        display: flex; gap: 12px;
+    }
+
+    .search-input-wrap {
+        flex: 1; position: relative;
+    }
+
+    .search-icon {
+        position: absolute; left: 16px; top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px; pointer-events: none;
+    }
+
+    .search-input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px 14px 48px;
+        color: var(--text);
+        font-family: 'Syne', sans-serif;
+        font-size: 16px; font-weight: 600;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+        border-color: var(--warning);
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
+    }
+
+    .search-input::placeholder { color: var(--muted); font-weight: 400; }
+
+    .btn-search {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 14px 28px;
+        background: linear-gradient(135deg, var(--warning), var(--danger));
+        color: white; border: none; border-radius: 12px;
+        font-family: 'Syne', sans-serif;
+        font-size: 15px; font-weight: 700; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(245,158,11,0.35);
+        transition: opacity 0.2s, transform 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-search:hover { opacity: 0.88; transform: scale(1.02); }
+
+    /* ── SUGGESTIONS ── */
+    .suggestions {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        margin-top: 16px;
+    }
+
+    .suggest-pill {
+        background: rgba(245,158,11,0.08);
+        border: 1px solid rgba(245,158,11,0.2);
+        color: #fbbf24; padding: 5px 14px;
+        border-radius: 100px; font-size: 12px;
+        font-family: 'Space Mono', monospace;
+        cursor: pointer; transition: all 0.2s;
+    }
+
+    .suggest-pill:hover {
+        background: rgba(245,158,11,0.18);
+        border-color: rgba(245,158,11,0.4);
+    }
+
+    /* ── LOADING ── */
+    .loading-bar {
+        display: none;
+        height: 3px;
+        background: linear-gradient(90deg, var(--warning), var(--danger), var(--accent3));
+        border-radius: 2px;
+        margin-bottom: 28px;
+        animation: shimmer 1.2s ease infinite;
+        background-size: 200% 100%;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    .loading-bar.show { display: block; }
+
+    /* ── PHOTOS GRID ── */
+    .photos-section { margin-bottom: 28px; }
+
+    .section-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--muted);
+        margin-bottom: 14px;
+    }
+
+    .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    .photo-card {
+        border-radius: 14px; overflow: hidden;
+        border: 1px solid var(--border);
+        aspect-ratio: 4/3;
+        position: relative;
+        animation: fadeUp 0.4s ease both;
+    }
+
+    .photo-card:nth-child(2) { animation-delay: 0.1s; }
+    .photo-card:nth-child(3) { animation-delay: 0.2s; }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .photo-card img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+
+    .photo-card:hover img { transform: scale(1.05); }
+
+    .photo-overlay {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        padding: 20px 12px 10px;
+        background: linear-gradient(transparent, rgba(5,8,16,0.7));
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; color: rgba(255,255,255,0.7);
+        letter-spacing: 1px;
+    }
+
+    /* ── RESULT CARD ── */
+    .result-card {
+        background: var(--surface);
+        border: 1px solid rgba(245,158,11,0.15);
+        border-radius: 20px; overflow: hidden;
+        margin-bottom: 40px;
+        animation: fadeUp 0.4s ease both;
+    }
+
+    .result-top-bar {
+        height: 2px;
+        background: linear-gradient(90deg, var(--warning), var(--danger), var(--accent3));
+    }
+
+    .result-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 24px; border-bottom: 1px solid var(--border);
+    }
+
+    .result-title {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 15px; font-weight: 700;
+    }
+
+    .live-dot {
+        width: 8px; height: 8px;
+        background: var(--warning); border-radius: 50%;
+        animation: pulse 2s infinite;
+        box-shadow: 0 0 6px rgba(245,158,11,0.5);
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+    .result-place-name {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: #fbbf24;
+        letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    .btn-copy {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 16px;
+        background: rgba(245,158,11,0.1);
+        border: 1px solid rgba(245,158,11,0.25);
+        color: #fbbf24; border-radius: 8px;
+        font-size: 12px; font-family: 'Space Mono', monospace;
+        cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-copy:hover { background: rgba(245,158,11,0.2); }
+
+    .result-body { padding: 24px; }
+
+    .result-text {
+        background: rgba(245,158,11,0.03);
+        border: 1px solid rgba(245,158,11,0.12);
+        border-left: 3px solid var(--warning);
+        border-radius: 0 12px 12px 0;
+        padding: 20px 22px;
+        font-size: 14px; color: #cbd5e1;
+        line-height: 2; white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* ── FOOTER ── */
+    .hist-footer {
+        text-align: center; padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted); letter-spacing: 1px;
+    }
+
+    @media (max-width: 600px) {
+        .photos-grid { grid-template-columns: 1fr; }
+        .search-wrap { flex-direction: column; }
+        .hist-page { padding: 24px 16px; }
+    }
+</style>
+
+<div class="hist-page">
+    <div class="blob-tr"></div>
+    <div class="blob-bl"></div>
+
+    <div class="hist-content">
+
+        <!-- HEADER -->
+        <div class="hist-header">
+            <div class="hist-logo">🏛️</div>
+            <div>
+                <div class="hist-title">Historical Place Finder</div>
+                <div class="hist-subtitle">Search Any Place · Get Full History · Live Photos</div>
+            </div>
+        </div>
+
+        <!-- SEARCH CARD -->
+        <div class="search-card">
+            <div class="search-card-body">
+                <label class="search-label">🔍 Search a Historical Place</label>
+                <form method="POST" onsubmit="showLoading()">
+                    <div class="search-wrap">
+                        <div class="search-input-wrap">
+                            <span class="search-icon">🏛️</span>
+                            <input
+                                class="search-input"
+                                type="text"
+                                name="place"
+                                placeholder="e.g. Taj Mahal, Eiffel Tower, Colosseum..."
+                                value="{{ place or '' }}"
+                                required
+                                autocomplete="off"
+                            >
+                        </div>
+                        <button type="submit" class="btn-search">🔍 Discover</button>
+                    </div>
+                </form>
+
+                <!-- Quick suggestions -->
+                <div class="suggestions">
+                    <span class="suggest-pill" onclick="fillSearch('Taj Mahal')">🕌 Taj Mahal</span>
+                    <span class="suggest-pill" onclick="fillSearch('Eiffel Tower')">🗼 Eiffel Tower</span>
+                    <span class="suggest-pill" onclick="fillSearch('Great Wall of China')">🧱 Great Wall</span>
+                    <span class="suggest-pill" onclick="fillSearch('Colosseum Rome')">🏟️ Colosseum</span>
+                    <span class="suggest-pill" onclick="fillSearch('Machu Picchu')">🏔️ Machu Picchu</span>
+                    <span class="suggest-pill" onclick="fillSearch('Pyramids of Giza')">🔺 Pyramids</span>
+                    <span class="suggest-pill" onclick="fillSearch('Statue of Liberty')">🗽 Statue of Liberty</span>
+                    <span class="suggest-pill" onclick="fillSearch('Angkor Wat')">🛕 Angkor Wat</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOADING BAR -->
+        <div class="loading-bar" id="loadingBar"></div>
+
+        {% if photos %}
+        <!-- PHOTOS GRID -->
+        <div class="photos-section">
+            <div class="section-label">📸 Photos of {{ place }}</div>
+            <div class="photos-grid">
+                {% for photo in photos %}
+                <div class="photo-card">
+                    <img src="{{ photo.url }}" alt="{{ place }}" loading="lazy">
+                    <div class="photo-overlay">📷 {{ photo.credit }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if history_info %}
+        <!-- HISTORY RESULT -->
+        <div class="result-card">
+            <div class="result-top-bar"></div>
+            <div class="result-header">
+                <div class="result-title">
+                    <div class="live-dot"></div>
+                    🏛️ Historical Analysis
+                    <span class="result-place-name">· {{ place }}</span>
+                </div>
+                <button class="btn-copy" onclick="copyResult(this)">📋 Copy</button>
+            </div>
+            <div class="result-body">
+                <div class="result-text" id="histResult">{{ history_info }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:14px;padding:20px 24px;color:#ff6b6b;font-size:14px;margin-bottom:28px;">
+            ❌ {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- FOOTER -->
+        <!-- <div class="hist-footer">
+            CAPTION AI · HISTORICAL PLACE FINDER · AI POWERED
+        </div> -->
+
+    </div>
+</div>
+
+<script>
+    function fillSearch(name) {
+        document.querySelector('.search-input').value = name;
+        document.querySelector('.search-input').focus();
+    }
+
+    function showLoading() {
+        document.getElementById('loadingBar').classList.add('show');
+    }
+
+    function copyResult(btn) {
+        const text = document.getElementById('histResult').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = '✅ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+        });
+    }
+</script>
+
+{% endblock %}

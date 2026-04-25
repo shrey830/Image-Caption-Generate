@@ -1,0 +1,748 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+    :root {
+        --bg: #050810;
+        --surface: #0c1120;
+        --surface2: #111827;
+        --border: rgba(99, 179, 255, 0.12);
+        --accent: #3b82f6;
+        --accent2: #06b6d4;
+        --accent3: #8b5cf6;
+        --success: #10b981;
+        --pink: #ec4899;
+        --orange: #f97316;
+        --text: #e2e8f0;
+        --muted: #64748b;
+    }
+
+    body {
+        font-family: 'Syne', sans-serif !important;
+        background: var(--bg) !important;
+        color: var(--text) !important;
+    }
+
+    .ht-page {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .ht-page::before {
+        content: '';
+        position: fixed; inset: 0;
+        background-image:
+            linear-gradient(rgba(236,72,153,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(236,72,153,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-tr {
+        position: fixed; top: -200px; right: -200px;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-bl {
+        position: fixed; bottom: -200px; left: -100px;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(249,115,22,0.05) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .ht-content { position: relative; z-index: 1; }
+
+    /* ── HEADER ── */
+    .ht-header {
+        display: flex; align-items: center; gap: 16px;
+        margin-bottom: 40px; padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        animation: fadeUp 0.4s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ht-logo {
+        width: 48px; height: 48px;
+        background: linear-gradient(135deg, var(--pink), var(--orange));
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 20px rgba(236,72,153,0.35);
+    }
+
+    .ht-title {
+        font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 0%, var(--pink) 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .ht-subtitle {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted);
+        letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* ── CARD ── */
+    .ht-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px; overflow: hidden;
+        margin-bottom: 28px; position: relative;
+        animation: fadeUp 0.4s ease both;
+        animation-delay: 0.1s;
+    }
+
+    .ht-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--pink), var(--orange), var(--accent3));
+    }
+
+    .ht-card-body { padding: 28px 32px; }
+
+    /* ── FORM ── */
+    .form-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--muted);
+        margin-bottom: 8px; display: block;
+    }
+
+    .form-group { margin-bottom: 20px; }
+
+    .caption-textarea {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 18px;
+        color: var(--text);
+        font-family: 'Syne', sans-serif;
+        font-size: 15px; line-height: 1.7;
+        outline: none; resize: vertical;
+        min-height: 120px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .caption-textarea:focus {
+        border-color: var(--pink);
+        box-shadow: 0 0 0 3px rgba(236,72,153,0.1);
+    }
+
+    .caption-textarea::placeholder { color: var(--muted); }
+
+    .char-count {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; color: var(--muted);
+        text-align: right; margin-top: 6px;
+    }
+
+    /* Platform + Niche row */
+    .options-row {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 16px; margin-bottom: 20px;
+    }
+
+    .select-wrap { position: relative; }
+
+    .form-select {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 36px 12px 14px;
+        color: var(--text);
+        font-family: 'Syne', sans-serif;
+        font-size: 14px; outline: none;
+        appearance: none;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .form-select:focus { border-color: var(--pink); }
+
+    .select-arrow {
+        position: absolute; right: 12px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted); pointer-events: none; font-size: 12px;
+    }
+
+    /* Count selector */
+    .count-tabs {
+        display: flex; gap: 8px; margin-bottom: 20px;
+    }
+
+    .count-tab {
+        flex: 1; padding: 9px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--muted);
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; text-transform: uppercase;
+        letter-spacing: 1px; cursor: pointer;
+        transition: all 0.2s; text-align: center;
+    }
+
+    .count-tab:hover { border-color: var(--pink); color: var(--text); }
+
+    .count-tab.active {
+        background: linear-gradient(135deg, var(--pink), var(--orange));
+        border-color: transparent; color: white;
+        box-shadow: 0 2px 10px rgba(236,72,153,0.3);
+    }
+
+    /* Generate btn */
+    .btn-generate {
+        width: 100%; padding: 14px;
+        background: linear-gradient(135deg, var(--pink), var(--orange));
+        color: white; border: none; border-radius: 12px;
+        font-family: 'Syne', sans-serif;
+        font-size: 15px; font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(236,72,153,0.35);
+        transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-generate:hover { opacity: 0.88; transform: scale(1.02); }
+
+    /* ── RESULT CARD ── */
+    .result-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px; overflow: hidden;
+        margin-bottom: 28px;
+        animation: fadeUp 0.4s ease both;
+        position: relative;
+    }
+
+    .result-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--pink), var(--orange), var(--accent3));
+    }
+
+    .result-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 24px; border-bottom: 1px solid var(--border);
+    }
+
+    .result-title {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 15px; font-weight: 700;
+    }
+
+    .live-dot {
+        width: 8px; height: 8px; background: var(--pink);
+        border-radius: 50%; animation: pulse 2s infinite;
+        box-shadow: 0 0 6px rgba(236,72,153,0.5);
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+    .result-stats {
+        display: flex; gap: 16px; align-items: center;
+    }
+
+    .stat-badge {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 1px; color: var(--muted);
+        background: var(--surface2); border: 1px solid var(--border);
+        padding: 4px 10px; border-radius: 100px;
+    }
+
+    .stat-badge span { color: var(--pink); }
+
+    .btn-copy-all {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 16px;
+        background: rgba(236,72,153,0.1);
+        border: 1px solid rgba(236,72,153,0.25);
+        color: var(--pink); border-radius: 8px;
+        font-size: 12px; font-family: 'Space Mono', monospace;
+        cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-copy-all:hover { background: rgba(236,72,153,0.2); }
+
+    .result-body { padding: 24px; }
+
+    /* ── HASHTAG TAGS ── */
+    .hashtag-groups { display: flex; flex-direction: column; gap: 20px; }
+
+    .ht-group-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 2px; margin-bottom: 10px;
+    }
+
+    .ht-group-high .ht-group-label { color: var(--pink); }
+    .ht-group-med  .ht-group-label { color: var(--orange); }
+    .ht-group-low  .ht-group-label { color: var(--accent2); }
+    .ht-group-niche .ht-group-label { color: var(--accent3); }
+
+    .hashtags-wrap {
+        display: flex; flex-wrap: wrap; gap: 8px;
+    }
+
+    .ht-tag {
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-family: 'Space Mono', monospace;
+        font-size: 12px; cursor: pointer;
+        transition: all 0.2s; user-select: none;
+        animation: popIn 0.3s ease both;
+    }
+
+    @keyframes popIn {
+        from { opacity: 0; transform: scale(0.85); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+
+    .ht-tag-high {
+        background: rgba(236,72,153,0.12);
+        border: 1px solid rgba(236,72,153,0.3);
+        color: #f9a8d4;
+    }
+
+    .ht-tag-high:hover {
+        background: rgba(236,72,153,0.25);
+        border-color: var(--pink);
+    }
+
+    .ht-tag-med {
+        background: rgba(249,115,22,0.1);
+        border: 1px solid rgba(249,115,22,0.25);
+        color: #fdba74;
+    }
+
+    .ht-tag-med:hover {
+        background: rgba(249,115,22,0.2);
+        border-color: var(--orange);
+    }
+
+    .ht-tag-low {
+        background: rgba(6,182,212,0.1);
+        border: 1px solid rgba(6,182,212,0.2);
+        color: #67e8f9;
+    }
+
+    .ht-tag-low:hover {
+        background: rgba(6,182,212,0.2);
+        border-color: var(--accent2);
+    }
+
+    .ht-tag-niche {
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
+        color: #c4b5fd;
+    }
+
+    .ht-tag-niche:hover {
+        background: rgba(139,92,246,0.2);
+        border-color: var(--accent3);
+    }
+
+    .ht-tag.copied {
+        background: rgba(16,185,129,0.15) !important;
+        border-color: var(--success) !important;
+        color: #6ee7b7 !important;
+    }
+
+    /* ── COPY TEXT BOX ── */
+    .copy-box {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px; padding: 16px 18px;
+        font-family: 'Space Mono', monospace;
+        font-size: 12px; color: #94a3b8;
+        line-height: 1.8; word-break: break-all;
+        margin-top: 20px;
+    }
+
+    .copy-box-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--muted);
+        margin-bottom: 10px;
+    }
+
+    /* ── FOOTER ── */
+    .ht-footer {
+        text-align: center; padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted); letter-spacing: 1px;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 600px) {
+        .options-row { grid-template-columns: 1fr; }
+        .ht-card-body { padding: 20px 18px; }
+        .count-tabs { flex-wrap: wrap; }
+    }
+</style>
+
+<div class="ht-page">
+    <div class="blob-tr"></div>
+    <div class="blob-bl"></div>
+
+    <div class="ht-content">
+
+        <!-- HEADER -->
+        <div class="ht-header">
+            <div class="ht-logo">#️⃣</div>
+            <div>
+                <div class="ht-title">Hashtag Generator</div>
+                <div class="ht-subtitle">Caption → 30 Smart Hashtags · Instagram · Twitter · LinkedIn</div>
+            </div>
+        </div>
+
+        <!-- INPUT CARD -->
+        <div class="ht-card">
+            <div class="ht-card-body">
+
+                <div class="form-group">
+                    <label class="form-label">✍️ Your Caption or Keywords</label>
+                    <textarea
+                        class="caption-textarea"
+                        id="captionInput"
+                        placeholder="e.g. Beautiful sunset at the beach, golden hour vibes, feeling relaxed..."
+                        oninput="updateCharCount()"
+                        maxlength="500"
+                    ></textarea>
+                    <div class="char-count"><span id="charCount">0</span> / 500</div>
+                </div>
+
+                <div class="options-row">
+                    <div>
+                        <label class="form-label">📱 Platform</label>
+                        <div class="select-wrap">
+                            <select class="form-select" id="platformSelect">
+                                <option value="instagram">Instagram</option>
+                                <option value="twitter">Twitter / X</option>
+                                <option value="linkedin">LinkedIn</option>
+                                <option value="youtube">YouTube</option>
+                                <option value="tiktok">TikTok</option>
+                            </select>
+                            <span class="select-arrow">▼</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">🎯 Niche</label>
+                        <div class="select-wrap">
+                            <select class="form-select" id="nicheSelect">
+                                <option value="general">General</option>
+                                <option value="travel">Travel</option>
+                                <option value="food">Food & Cooking</option>
+                                <option value="fashion">Fashion & Style</option>
+                                <option value="fitness">Fitness & Health</option>
+                                <option value="tech">Technology</option>
+                                <option value="business">Business</option>
+                                <option value="nature">Nature & Wildlife</option>
+                                <option value="art">Art & Design</option>
+                                <option value="music">Music</option>
+                                <option value="photography">Photography</option>
+                                <option value="motivation">Motivation</option>
+                            </select>
+                            <span class="select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="form-label">📊 Number of Hashtags</label>
+                <div class="count-tabs" id="countTabs">
+                    <div class="count-tab" onclick="selectCount(10, this)">10</div>
+                    <div class="count-tab" onclick="selectCount(15, this)">15</div>
+                    <div class="count-tab active" onclick="selectCount(20, this)">20</div>
+                    <div class="count-tab" onclick="selectCount(25, this)">25</div>
+                    <div class="count-tab" onclick="selectCount(30, this)">30</div>
+                </div>
+
+                <button class="btn-generate" onclick="generateHashtags()">
+                    #️⃣ Generate Hashtags
+                </button>
+
+            </div>
+        </div>
+
+        <!-- RESULT -->
+        <div id="resultSection" style="display:none;">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-title">
+                        <div class="live-dot"></div>
+                        Generated Hashtags
+                    </div>
+                    <div class="result-stats">
+                        <div class="stat-badge">Total: <span id="totalCount">0</span></div>
+                        <button class="btn-copy-all" onclick="copyAll()">📋 Copy All</button>
+                    </div>
+                </div>
+                <div class="result-body">
+                    <div class="hashtag-groups" id="hashtagGroups"></div>
+
+                    <div class="copy-box-label" style="margin-top:20px;">📋 Ready to Paste</div>
+                    <div class="copy-box" id="copyBox"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ht-footer">
+            CAPTION AI · HASHTAG GENERATOR · SMART KEYWORD ANALYSIS
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let selectedCount = 20;
+
+    function updateCharCount() {
+        const len = document.getElementById('captionInput').value.length;
+        document.getElementById('charCount').textContent = len;
+    }
+
+    function selectCount(n, btn) {
+        selectedCount = n;
+        document.querySelectorAll('.count-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    // ── HASHTAG DATABASE ──
+    const HASHTAG_DB = {
+        // Universal high-reach
+        high: ['#viral', '#trending', '#explore', '#instagood', '#photooftheday',
+               '#love', '#beautiful', '#amazing', '#follow', '#like',
+               '#picoftheday', '#instadaily', '#repost', '#bestoftheday', '#photography'],
+
+        // Platform specific
+        platform: {
+            instagram: ['#instagramers', '#insta', '#instaphoto', '#instamood', '#igdaily',
+                        '#instacool', '#instapic', '#instagramhub', '#igaddict', '#instafollow'],
+            twitter:   ['#TwitterTrends', '#MustFollow', '#FF', '#TwitterCommunity', '#Tweet'],
+            linkedin:  ['#LinkedInLearning', '#ProfessionalDevelopment', '#NetworkingTips',
+                        '#Leadership', '#CareerAdvice', '#BusinessGrowth'],
+            youtube:   ['#YouTubeCreator', '#VideoContent', '#Subscribe', '#YouTube', '#NewVideo'],
+            tiktok:    ['#TikTokCreators', '#FYP', '#ForYou', '#FYPage', '#TikTok', '#viral']
+        },
+
+        // Niche specific
+        niche: {
+            general:    ['#dailylife', '#lifestyle', '#content', '#creator', '#post',
+                         '#share', '#community', '#vibes', '#mood', '#aesthetic'],
+            travel:     ['#travel', '#wanderlust', '#adventure', '#explore', '#travelgram',
+                         '#instatravel', '#travelphotography', '#travelblogger', '#vacation',
+                         '#backpacker', '#traveltheworld', '#worldtravel', '#traveler', '#trip', '#holiday'],
+            food:       ['#food', '#foodie', '#foodphotography', '#instafood', '#yummy',
+                         '#delicious', '#homecooking', '#foodlover', '#recipe', '#cooking',
+                         '#foodstagram', '#tasty', '#foodblogger', '#healthyfood', '#eat'],
+            fashion:    ['#fashion', '#style', '#ootd', '#fashionblogger', '#outfit',
+                         '#streetstyle', '#model', '#fashionista', '#clothing', '#trend',
+                         '#instafashion', '#styleinspo', '#fashionphotography', '#lookoftheday', '#wiwt'],
+            fitness:    ['#fitness', '#gym', '#workout', '#fitnessmotivation', '#health',
+                         '#fit', '#bodybuilding', '#training', '#exercise', '#healthylifestyle',
+                         '#fitfam', '#motivation', '#sport', '#running', '#nutrition'],
+            tech:       ['#technology', '#tech', '#innovation', '#coding', '#developer',
+                         '#programming', '#software', '#AI', '#startup', '#digital',
+                         '#gadgets', '#techie', '#engineering', '#data', '#cybersecurity'],
+            business:   ['#business', '#entrepreneur', '#success', '#marketing', '#startup',
+                         '#businessowner', '#motivation', '#hustle', '#branding', '#socialmedia',
+                         '#smallbusiness', '#growth', '#networking', '#mindset', '#goals'],
+            nature:     ['#nature', '#naturephotography', '#wildlife', '#outdoors', '#landscape',
+                         '#earth', '#green', '#environment', '#trees', '#animals',
+                         '#naturelover', '#hiking', '#mountains', '#sky', '#sunset'],
+            art:        ['#art', '#artwork', '#artist', '#design', '#creative',
+                         '#illustration', '#drawing', '#painting', '#digitalart', '#sketch',
+                         '#artofinstagram', '#instaart', '#artlovers', '#contemporaryart', '#modernart'],
+            music:      ['#music', '#musician', '#song', '#newmusic', '#artist',
+                         '#hiphop', '#pop', '#rap', '#singer', '#producer',
+                         '#musicproducer', '#guitar', '#piano', '#beats', '#studio'],
+            photography:['#photography', '#photographer', '#photo', '#portrait', '#camera',
+                         '#lightroom', '#canonphotography', '#nikon', '#shootfilm', '#photoshoot',
+                         '#streetphotography', '#landscapephotography', '#macro', '#longexposure', '#blackandwhite'],
+            motivation:  ['#motivation', '#inspiration', '#mindset', '#success', '#goals',
+                         '#positivity', '#believe', '#hustle', '#grind', '#selfimprovement',
+                         '#quotes', '#dailymotivation', '#lifestyle', '#growth', '#winning']
+        },
+
+        // Keyword-based tags (extracted from caption text)
+        keywords: {
+            sunset:    ['#sunset', '#sunsetphotography', '#goldenHour', '#sunsetlovers', '#skyphotography'],
+            sunrise:   ['#sunrise', '#morningvibes', '#earlymorning', '#sunrisephotography', '#newday'],
+            beach:     ['#beach', '#beachlife', '#ocean', '#sea', '#summer', '#waves', '#sand', '#beachvibes'],
+            mountain:  ['#mountain', '#mountains', '#hiking', '#trekking', '#altitude', '#peak', '#summit'],
+            city:      ['#city', '#citylife', '#urban', '#cityscape', '#architecture', '#streets', '#downtown'],
+            coffee:    ['#coffee', '#coffeetime', '#cafe', '#latteart', '#coffeeaddict', '#morningcoffee'],
+            dog:       ['#dog', '#puppy', '#dogsofinstagram', '#doglife', '#pet', '#pup', '#doglover'],
+            cat:       ['#cat', '#kitten', '#catsofinstagram', '#catlife', '#meow', '#catlovers'],
+            wedding:   ['#wedding', '#bride', '#weddingday', '#weddingphotography', '#love', '#romance'],
+            baby:      ['#baby', '#newborn', '#babyshower', '#momlife', '#toddler', '#kids'],
+            gym:       ['#gym', '#gymlife', '#workout', '#fitness', '#gains', '#sweat', '#lifting'],
+            yoga:      ['#yoga', '#yogalife', '#meditation', '#namaste', '#yogapractice', '#mindfulness'],
+            food:      ['#foodporn', '#homemade', '#recipe', '#chef', '#instafood', '#yummy'],
+            india:     ['#india', '#incredible_india', '#desi', '#indianculture', '#bharat', '#indianphotography'],
+            paris:     ['#paris', '#parisienne', '#eiffeltower', '#france', '#parisian', '#visitparis'],
+            london:    ['#london', '#londonlife', '#visitlondon', '#uk', '#england', '#britishlife'],
+            newyork:   ['#newyork', '#nyc', '#manhattan', '#bigapple', '#nycphotography'],
+            night:     ['#nightphotography', '#nightlife', '#nightout', '#lights', '#citylights', '#nightsky'],
+            rain:      ['#rain', '#rainy', '#rainyday', '#monsoon', '#weather', '#rainclouds'],
+            flower:    ['#flower', '#flowers', '#floral', '#nature', '#bloom', '#garden', '#botanical'],
+            portrait:  ['#portrait', '#portraitphotography', '#face', '#model', '#editorial', '#headshot'],
+            black:     ['#blackandwhite', '#bnw', '#monochrome', '#bwphotography', '#contrast'],
+            happy:     ['#happy', '#happiness', '#smile', '#joy', '#positivevibes', '#goodvibes'],
+            family:    ['#family', '#familylove', '#fam', '#familytime', '#blessed', '#familyphoto'],
+            travel:    ['#travel', '#wanderlust', '#adventure', '#explore', '#travelgram', '#globetrotter'],
+        }
+    };
+
+    function extractKeywords(text) {
+        const lower = text.toLowerCase();
+        const found = [];
+        for (const [kw, tags] of Object.entries(HASHTAG_DB.keywords)) {
+            if (lower.includes(kw)) {
+                found.push(...tags);
+            }
+        }
+        return [...new Set(found)];
+    }
+
+    function generateHashtags() {
+        const caption  = document.getElementById('captionInput').value.trim();
+        const platform = document.getElementById('platformSelect').value;
+        const niche    = document.getElementById('nicheSelect').value;
+        const count    = selectedCount;
+
+        if (!caption) {
+            document.getElementById('captionInput').focus();
+            document.getElementById('captionInput').style.borderColor = '#ec4899';
+            setTimeout(() => document.getElementById('captionInput').style.borderColor = '', 1500);
+            return;
+        }
+
+        // Build pools
+        const keywordTags = extractKeywords(caption);
+        const nicheTags   = HASHTAG_DB.niche[niche] || HASHTAG_DB.niche.general;
+        const platTags    = HASHTAG_DB.platform[platform] || [];
+        const highTags    = HASHTAG_DB.high;
+
+        // Deduplicate and shuffle
+        function shuffle(arr) {
+            return [...arr].sort(() => Math.random() - 0.5);
+        }
+
+        // Allocate slots by group
+        const totalSlots = count;
+        let kwSlots    = Math.min(keywordTags.length, Math.floor(totalSlots * 0.30));
+        let nicheSlots = Math.floor(totalSlots * 0.35);
+        let platSlots  = Math.floor(totalSlots * 0.15);
+        let highSlots  = totalSlots - kwSlots - nicheSlots - platSlots;
+
+        const selected = {
+            keyword: shuffle(keywordTags).slice(0, kwSlots),
+            niche:   shuffle(nicheTags).slice(0, nicheSlots),
+            platform:shuffle(platTags).slice(0, platSlots),
+            high:    shuffle(highTags).slice(0, highSlots),
+        };
+
+        // Add caption words as hashtags
+        const words = caption.split(/\s+/).filter(w => w.length > 3);
+        const captionTags = words.slice(0, 3).map(w => '#' + w.replace(/[^a-zA-Z0-9]/g,''));
+        selected.keyword = [...selected.keyword, ...captionTags].slice(0, kwSlots + 3);
+
+        renderResults(selected, platform, niche);
+    }
+
+    function renderResults(groups, platform, niche) {
+        const allTags = [
+            ...groups.keyword,
+            ...groups.niche,
+            ...groups.platform,
+            ...groups.high
+        ];
+
+        document.getElementById('totalCount').textContent = allTags.length;
+
+        const container = document.getElementById('hashtagGroups');
+        container.innerHTML = '';
+
+        const groupDefs = [
+            { key: 'keyword',  label: '🎯 Keyword-Based (From Your Caption)', cls: 'ht-group-high',  tagCls: 'ht-tag-high' },
+            { key: 'niche',    label: `📌 Niche Tags (${niche.charAt(0).toUpperCase()+niche.slice(1)})`, cls: 'ht-group-med', tagCls: 'ht-tag-med' },
+            { key: 'platform', label: `📱 Platform Tags (${platform.charAt(0).toUpperCase()+platform.slice(1)})`, cls: 'ht-group-low', tagCls: 'ht-tag-low' },
+            { key: 'high',     label: '🔥 High Reach Tags', cls: 'ht-group-niche', tagCls: 'ht-tag-niche' },
+        ];
+
+        groupDefs.forEach((g, gi) => {
+            if (!groups[g.key] || groups[g.key].length === 0) return;
+
+            const groupDiv = document.createElement('div');
+            groupDiv.className = g.cls;
+
+            const label = document.createElement('div');
+            label.className = 'ht-group-label';
+            label.textContent = g.label;
+            groupDiv.appendChild(label);
+
+            const wrap = document.createElement('div');
+            wrap.className = 'hashtags-wrap';
+
+            groups[g.key].forEach((tag, i) => {
+                const el = document.createElement('div');
+                el.className = `ht-tag ${g.tagCls}`;
+                el.textContent = tag.startsWith('#') ? tag : '#' + tag;
+                el.style.animationDelay = (gi * 0.05 + i * 0.03) + 's';
+                el.onclick = () => copyTag(el);
+                el.title = 'Click to copy';
+                wrap.appendChild(el);
+            });
+
+            groupDiv.appendChild(wrap);
+            container.appendChild(groupDiv);
+        });
+
+        // Copy box
+        const copyText = allTags.map(t => t.startsWith('#') ? t : '#' + t).join(' ');
+        document.getElementById('copyBox').textContent = copyText;
+
+        document.getElementById('resultSection').style.display = 'block';
+        document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function copyTag(el) {
+        const tag = el.textContent;
+        navigator.clipboard.writeText(tag).then(() => {
+            el.classList.add('copied');
+            const orig = el.textContent;
+            el.textContent = '✅ Copied';
+            setTimeout(() => {
+                el.textContent = orig;
+                el.classList.remove('copied');
+            }, 1500);
+        });
+    }
+
+    function copyAll() {
+        const text = document.getElementById('copyBox').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.btn-copy-all');
+            btn.textContent = '✅ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy All', 2000);
+        });
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,630 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+    :root {
+        --bg: #050810;
+        --surface: #0c1120;
+        --surface2: #111827;
+        --border: rgba(99, 179, 255, 0.12);
+        --accent: #3b82f6;
+        --accent2: #06b6d4;
+        --accent3: #8b5cf6;
+        --danger: #ef4444;
+        --danger2: #ff6b6b;
+        --text: #e2e8f0;
+        --muted: #64748b;
+    }
+
+    body {
+        font-family: 'Syne', sans-serif !important;
+        background: var(--bg) !important;
+        color: var(--text) !important;
+    }
+
+    /* Grid background */
+    .hist-page {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 30px;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .hist-page::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .blob-tr {
+        position: fixed;
+        top: -200px; right: -200px;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-bl {
+        position: fixed;
+        bottom: -200px; left: -100px;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .hist-content { position: relative; z-index: 1; }
+
+    /* ── HEADER ── */
+    .hist-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .hist-header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .hist-logo {
+        width: 48px; height: 48px;
+        background: linear-gradient(135deg, var(--accent), var(--accent3));
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 20px rgba(59,130,246,0.3);
+    }
+
+    .hist-title {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hist-subtitle {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+
+    .hist-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 18px;
+        background: rgba(59,130,246,0.1);
+        border: 1px solid rgba(59,130,246,0.25);
+        color: var(--accent2);
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 12px;
+        font-family: 'Space Mono', monospace;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: rgba(59,130,246,0.2);
+        border-color: rgba(59,130,246,0.5);
+        color: var(--accent2);
+        transform: translateX(-3px);
+        text-decoration: none;
+    }
+
+    .btn-clear {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 18px;
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.2);
+        color: var(--danger2);
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 12px;
+        font-family: 'Space Mono', monospace;
+        transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+        background: rgba(239,68,68,0.2);
+        border-color: rgba(239,68,68,0.4);
+        color: var(--danger2);
+        text-decoration: none;
+        transform: scale(1.03);
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 18px 22px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(99,179,255,0.25);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: var(--grad);
+    }
+
+    .stat-card:nth-child(1) { --grad: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .stat-card:nth-child(2) { --grad: linear-gradient(90deg, var(--accent3), #ec4899); }
+    .stat-card:nth-child(3) { --grad: linear-gradient(90deg, #10b981, #06b6d4); }
+    .stat-card:nth-child(4) { --grad: linear-gradient(90deg, #f59e0b, #ef4444); }
+
+    .stat-icon { font-size: 24px; margin-bottom: 10px; }
+    .stat-value { font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .stat-label {
+        font-size: 11px; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 1px;
+        font-family: 'Space Mono', monospace;
+    }
+
+    /* ── SEARCH + FILTER ── */
+    .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .section-title {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 18px; font-weight: 700;
+    }
+
+    .section-title-bar {
+        width: 4px; height: 22px;
+        background: linear-gradient(180deg, var(--accent), var(--accent3));
+        border-radius: 2px;
+    }
+
+    .section-badge {
+        background: rgba(59,130,246,0.15);
+        border: 1px solid rgba(59,130,246,0.3);
+        color: var(--accent2);
+        padding: 3px 10px; border-radius: 100px;
+        font-size: 12px; font-family: 'Space Mono', monospace;
+    }
+
+    .toolbar-right { display: flex; gap: 10px; align-items: center; }
+
+    .search-wrap { position: relative; width: 220px; }
+
+    .search-wrap input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 12px 8px 34px;
+        color: var(--text);
+        font-family: 'Space Mono', monospace;
+        font-size: 12px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--muted); }
+
+    .search-icon {
+        position: absolute; left: 11px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted); font-size: 12px;
+    }
+
+    /* ── HISTORY CARDS ── */
+    .history-list { display: flex; flex-direction: column; gap: 20px; }
+
+    .history-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        transition: border-color 0.2s, transform 0.2s;
+        animation: fadeUp 0.4s ease both;
+    }
+
+    .history-card:hover {
+        border-color: rgba(99,179,255,0.22);
+        transform: translateY(-2px);
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-card:nth-child(1) { animation-delay: 0.05s; }
+    .history-card:nth-child(2) { animation-delay: 0.10s; }
+    .history-card:nth-child(3) { animation-delay: 0.15s; }
+    .history-card:nth-child(4) { animation-delay: 0.20s; }
+    .history-card:nth-child(5) { animation-delay: 0.25s; }
+
+    .card-top-bar {
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent3), var(--accent2));
+    }
+
+    .card-body-inner {
+        display: flex;
+        gap: 0;
+    }
+
+    /* Image panel */
+    .card-img-panel {
+        width: 220px;
+        flex-shrink: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid var(--border);
+        background: rgba(255,255,255,0.01);
+    }
+
+    .card-img-panel img {
+        width: 100%;
+        max-width: 180px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        transition: transform 0.2s;
+    }
+
+    .card-img-panel img:hover { transform: scale(1.04); }
+
+    /* Content panel */
+    .card-content {
+        flex: 1;
+        padding: 20px 24px;
+    }
+
+    .card-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .meta-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .tone-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 4px 12px; border-radius: 100px;
+        font-size: 11px; font-family: 'Space Mono', monospace; font-weight: 700;
+    }
+
+    .tone-professional {
+        background: rgba(59,130,246,0.12);
+        border: 1px solid rgba(59,130,246,0.25);
+        color: #60a5fa;
+    }
+
+    .tone-fun {
+        background: rgba(251,191,36,0.12);
+        border: 1px solid rgba(251,191,36,0.25);
+        color: #fbbf24;
+    }
+
+    .tone-default {
+        background: rgba(99,179,255,0.08);
+        border: 1px solid var(--border);
+        color: var(--muted);
+    }
+
+    .lang-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 4px 12px; border-radius: 100px;
+        font-size: 11px; font-family: 'Space Mono', monospace;
+        background: rgba(139,92,246,0.12);
+        border: 1px solid rgba(139,92,246,0.25);
+        color: #a78bfa;
+    }
+
+    .btn-delete-sm {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 6px 14px;
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.2);
+        color: var(--danger2);
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 11px; font-family: 'Space Mono', monospace;
+        transition: all 0.2s;
+    }
+
+    .btn-delete-sm:hover {
+        background: rgba(239,68,68,0.2);
+        border-color: rgba(239,68,68,0.4);
+        color: var(--danger2);
+        text-decoration: none;
+        transform: scale(1.05);
+    }
+
+    .divider {
+        border: none;
+        border-top: 1px solid rgba(99,179,255,0.07);
+        margin: 12px 0;
+    }
+
+    .captions-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        margin-bottom: 10px;
+    }
+
+    .caption-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 12px;
+        background: rgba(255,255,255,0.03);
+        border-left: 2px solid var(--accent3);
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: #cbd5e1;
+        line-height: 1.5;
+        transition: background 0.15s;
+    }
+
+    .caption-item:hover { background: rgba(59,130,246,0.06); }
+
+    .caption-num {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        color: var(--accent3);
+        padding-top: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        color: var(--muted);
+    }
+
+    .empty-state .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-family: 'Space Mono', monospace; font-size: 12px; }
+
+    .btn-new {
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-top: 20px;
+        padding: 10px 22px;
+        background: linear-gradient(135deg, var(--accent), var(--accent3));
+        color: white; text-decoration: none;
+        border-radius: 10px; font-size: 13px;
+        font-family: 'Space Mono', monospace;
+        transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-new:hover { opacity: 0.85; transform: scale(1.03); color: white; text-decoration: none; }
+
+    /* ── FOOTER ── */
+    .hist-footer {
+        text-align: center;
+        margin-top: 50px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 1px;
+    }
+
+    /* responsive */
+    @media (max-width: 680px) {
+        .stats-row { grid-template-columns: repeat(2, 1fr); }
+        .card-body-inner { flex-direction: column; }
+        .card-img-panel { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+        .hist-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+    }
+</style>
+
+<div class="hist-page">
+    <div class="blob-tr"></div>
+    <div class="blob-bl"></div>
+
+    <div class="hist-content">
+
+        <!-- HEADER -->
+        <div class="hist-header">
+            <div class="hist-header-left">
+                <div class="hist-logo">🕒</div>
+                <div>
+                    <div class="hist-title">Caption History</div>
+                    <div class="hist-subtitle">Your Generated Captions · {{ user }}</div>
+                </div>
+            </div>
+            <div class="hist-actions">
+                <a href="{{ url_for('home') }}" class="btn-back">← Back</a>
+                <a href="{{ url_for('clear_history') }}" class="btn-clear"
+                   onclick="return confirm('Delete ALL your history? This cannot be undone.')">
+                    🗑 Clear All
+                </a>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">🖼️</div>
+                <div class="stat-value">{{ history|length }}</div>
+                <div class="stat-label">Total Captions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💼</div>
+                <div class="stat-value">{{ history | selectattr('tone', 'equalto', 'Professional') | list | length }}</div>
+                <div class="stat-label">Professional</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎉</div>
+                <div class="stat-value">{{ history | selectattr('tone', 'equalto', 'Fun') | list | length }}</div>
+                <div class="stat-label">Fun Tone</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🌐</div>
+                <div class="stat-value">{{ history | map(attribute='language') | unique | list | length }}</div>
+                <div class="stat-label">Languages</div>
+            </div>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="section-title">
+                <div class="section-title-bar"></div>
+                Your History
+                <span class="section-badge">{{ history|length }} entries</span>
+            </div>
+            <div class="toolbar-right">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Search captions..." oninput="filterCards()">
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY CARDS -->
+        {% if history %}
+        <div class="history-list" id="historyList">
+            {% for item in history %}
+            <div class="history-card" data-search="{{ item.captions | lower }} {{ item.tone | lower }} {{ item.language | lower }}">
+                <div class="card-top-bar"></div>
+                <div class="card-body-inner">
+
+                    <!-- IMAGE -->
+                    <div class="card-img-panel">
+                        {% if item.image_path %}
+                            <img src="{{ url_for('static', filename=item.image_path) }}" alt="Uploaded Image">
+                        {% else %}
+                            <div style="width:180px;height:140px;background:rgba(99,179,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:32px;">🖼️</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- CONTENT -->
+                    <div class="card-content">
+                        <div class="card-meta">
+                            <div class="meta-tags">
+                                {% if item.tone == 'Professional' %}
+                                    <span class="tone-badge tone-professional">💼 Professional</span>
+                                {% elif item.tone == 'Fun' %}
+                                    <span class="tone-badge tone-fun">🎉 Fun</span>
+                                {% else %}
+                                    <span class="tone-badge tone-default">{{ item.tone }}</span>
+                                {% endif %}
+
+                                <span class="lang-badge">
+                                    {% if item.language == 'Hindi' %}🇮🇳
+                                    {% elif item.language == 'Gujarati' %}🏳️
+                                    {% else %}🌐
+                                    {% endif %}
+                                    {{ item.language }}
+                                </span>
+                            </div>
+
+                            <a href="{{ url_for('delete_history', id=item.id) }}"
+                               class="btn-delete-sm"
+                               onclick="return confirm('Delete this caption?')">
+                                🗑 Delete
+                            </a>
+                        </div>
+
+                        <hr class="divider">
+
+                        <div class="captions-label">Generated Captions</div>
+
+                        {% for cap in item.captions.split(" | ") %}
+                            <div class="caption-item">
+                                <span class="caption-num">{{ loop.index }}</span>
+                                <span>{{ cap }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No History Yet</h3>
+            <p>You haven't generated any captions yet.<br>Upload an image to get started!</p>
+            <a href="{{ url_for('home') }}" class="btn-new">✨ Generate Caption</a>
+        </div>
+        {% endif %}
+
+        <!-- FOOTER -->
+        <!-- <div class="hist-footer">
+            CAPTION AI · YOUR PERSONAL HISTORY · {{ user | upper }}
+        </div> -->
+
+    </div>
+</div>
+
+<script>
+    function filterCards() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.history-card').forEach(card => {
+            const text = card.getAttribute('data-search') || '';
+            card.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+</script>
+
+{% endblock %}

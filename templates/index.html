@@ -1,0 +1,803 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+    :root {
+        --bg: #050810;
+        --surface: #0c1120;
+        --surface2: #111827;
+        --border: rgba(99, 179, 255, 0.12);
+        --accent: #3b82f6;
+        --accent2: #06b6d4;
+        --accent3: #8b5cf6;
+        --success: #10b981;
+        --danger: #ef4444;
+        --danger2: #ff6b6b;
+        --text: #e2e8f0;
+        --muted: #64748b;
+    }
+
+    body {
+        font-family: 'Syne', sans-serif !important;
+        background: var(--bg) !important;
+        color: var(--text) !important;
+    }
+
+    .home-page {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 30px;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .home-page::before {
+        content: '';
+        position: fixed; inset: 0;
+        background-image:
+            linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-tr {
+        position: fixed; top: -200px; right: -200px;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .blob-bl {
+        position: fixed; bottom: -200px; left: -100px;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+    }
+
+    .home-content { position: relative; z-index: 1; }
+
+    /* ── HEADER ── */
+    .home-header {
+        display: flex; align-items: center; gap: 16px;
+        margin-bottom: 40px; padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .home-logo {
+        width: 48px; height: 48px;
+        background: linear-gradient(135deg, var(--accent), var(--accent3));
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 20px rgba(59,130,246,0.3);
+    }
+
+    .home-title {
+        font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .home-subtitle {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted);
+        letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* ── MAIN UPLOAD CARD ── */
+    .upload-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 28px;
+        position: relative;
+    }
+
+    .upload-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--accent3), var(--accent2));
+    }
+
+    .upload-card-body { padding: 28px 32px; }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-label { display: block; cursor: pointer; }
+
+    .upload-zone {
+        border: 2px dashed rgba(99,179,255,0.22);
+        border-radius: 16px;
+        padding: 36px 20px;
+        text-align: center;
+        background: rgba(59,130,246,0.03);
+        transition: all 0.3s ease;
+    }
+
+    .upload-zone:hover {
+        border-color: var(--accent);
+        background: rgba(59,130,246,0.07);
+    }
+
+    .upload-zone.dragging {
+        border-color: var(--accent2);
+        background: rgba(6,182,212,0.07);
+        transform: scale(1.01);
+    }
+
+    .upload-icon-wrap {
+        width: 68px; height: 68px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15));
+        border: 1px solid rgba(99,179,255,0.2);
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px; margin: 0 auto 14px;
+        transition: transform 0.2s;
+    }
+
+    .upload-zone:hover .upload-icon-wrap { transform: scale(1.08); }
+
+    .upload-main-text { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+
+    .upload-sub-text {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .upload-formats {
+        display: flex; gap: 7px; justify-content: center;
+        margin-top: 14px; flex-wrap: wrap;
+    }
+
+    .fmt-pill {
+        background: rgba(99,179,255,0.08);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        padding: 3px 10px; border-radius: 100px;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    /* ── PREVIEW ── */
+    .preview-section {
+        display: none; margin-top: 22px;
+        padding-top: 22px; border-top: 1px solid var(--border);
+    }
+
+    .preview-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--muted); margin-bottom: 12px;
+    }
+
+    .preview-inner { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+
+    .preview-img-wrap { position: relative; flex-shrink: 0; }
+
+    .preview-img-wrap img {
+        max-width: 240px; max-height: 180px;
+        border-radius: 12px; border: 1px solid var(--border);
+        display: block; object-fit: cover;
+    }
+
+    .preview-badge {
+        position: absolute; top: 8px; left: 8px;
+        background: rgba(5,8,16,0.85); border: 1px solid var(--border);
+        border-radius: 6px; padding: 3px 8px;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; color: var(--accent2);
+    }
+
+    .preview-info { flex: 1; min-width: 160px; }
+
+    .preview-filename { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; word-break: break-all; }
+
+    .preview-meta { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); line-height: 2; }
+    .preview-meta span { color: var(--accent2); }
+
+    .btn-clear-file {
+        display: inline-flex; align-items: center; gap: 6px;
+        margin-top: 12px; padding: 6px 14px;
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.2);
+        color: var(--danger2); border-radius: 8px;
+        font-size: 11px; font-family: 'Space Mono', monospace;
+        cursor: pointer; transition: all 0.2s;
+    }
+
+    .btn-clear-file:hover { background: rgba(239,68,68,0.2); }
+
+    /* ── SELECTS ROW ── */
+    .selects-row {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 16px; margin-top: 22px;
+    }
+
+    .select-group label {
+        display: block;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px; text-transform: uppercase;
+        letter-spacing: 1.5px; color: var(--muted);
+        margin-bottom: 8px;
+    }
+
+    .select-group select {
+        width: 100%;
+        background: var(--surface2) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        padding: 11px 14px !important;
+        color: var(--text) !important;
+        font-family: 'Syne', sans-serif !important;
+        font-size: 14px !important;
+        outline: none !important;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 14px center !important;
+    }
+
+    .select-group select:focus { border-color: var(--accent) !important; }
+    .select-group select option { background: #111827; }
+
+    /* ── GENERATE BTN ── */
+    .btn-generate {
+        width: 100%; margin-top: 22px;
+        padding: 15px;
+        background: linear-gradient(135deg, var(--accent), var(--accent3));
+        color: white; border: none;
+        border-radius: 12px;
+        font-family: 'Syne', sans-serif;
+        font-size: 15px; font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+        transition: opacity 0.2s, transform 0.2s;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+
+    .btn-generate:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── CAPTIONS RESULT ── */
+    .captions-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px; overflow: hidden;
+        margin-bottom: 32px;
+        animation: fadeUp 0.4s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .captions-card::before {
+        content: ''; display: block; height: 2px;
+        background: linear-gradient(90deg, var(--success), var(--accent2));
+    }
+
+    .captions-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 24px; border-bottom: 1px solid var(--border);
+    }
+
+    .captions-title {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 15px; font-weight: 700;
+    }
+
+    .live-dot {
+        width: 8px; height: 8px; background: var(--success);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%,100% { opacity:1; transform:scale(1); }
+        50% { opacity:0.5; transform:scale(0.8); }
+    }
+
+    .captions-count {
+        font-family: 'Space Mono', monospace; font-size: 11px;
+        color: var(--muted); padding: 3px 10px;
+        background: rgba(99,179,255,0.08);
+        border: 1px solid var(--border); border-radius: 100px;
+    }
+
+    .captions-body { padding: 20px 24px; }
+
+    .caption-item {
+        display: flex; align-items: flex-start;
+        justify-content: space-between; gap: 12px;
+        padding: 12px 14px;
+        background: rgba(255,255,255,0.03);
+        border-left: 2px solid var(--accent3);
+        border-radius: 0 10px 10px 0;
+        margin-bottom: 10px;
+        transition: background 0.15s;
+    }
+
+    .caption-item:last-child { margin-bottom: 0; }
+    .caption-item:hover { background: rgba(59,130,246,0.05); }
+
+    .caption-left { display: flex; align-items: flex-start; gap: 10px; flex: 1; }
+
+    .cap-num {
+        font-family: 'Space Mono', monospace; font-size: 10px;
+        color: var(--accent3); padding-top: 3px; flex-shrink: 0;
+    }
+
+    .cap-text { font-size: 14px; color: #cbd5e1; line-height: 1.6; }
+
+    .cap-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .btn-speak, .btn-stop, .btn-copy-cap {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px;
+        border-radius: 8px; border: none;
+        font-size: 14px; cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-speak {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.2) !important;
+        color: #34d399;
+    }
+
+    .btn-speak:hover { background: rgba(16,185,129,0.2); }
+
+    .btn-stop {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.2) !important;
+        color: var(--danger2);
+    }
+
+    .btn-stop:hover { background: rgba(239,68,68,0.2); }
+
+    .btn-copy-cap {
+        background: rgba(6,182,212,0.1);
+        border: 1px solid rgba(6,182,212,0.2) !important;
+        color: var(--accent2);
+    }
+
+    .btn-copy-cap:hover { background: rgba(6,182,212,0.2); }
+
+    /* ── TOOLS SECTION ── */
+    .section-header {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 18px; margin-top: 40px;
+    }
+
+    .section-bar {
+        width: 4px; height: 22px;
+        background: linear-gradient(180deg, var(--accent), var(--accent3));
+        border-radius: 2px;
+    }
+
+    .section-title-text { font-size: 18px; font-weight: 700; }
+
+    .tools-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 14px; margin-bottom: 50px;
+    }
+
+    .tool-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px; padding: 18px 16px;
+        text-decoration: none; color: var(--text);
+        display: block;
+        transition: transform 0.2s, border-color 0.2s;
+        animation: fadeUp 0.4s ease both;
+    }
+
+    .tool-card:nth-child(1) { animation-delay: 0.05s; }
+    .tool-card:nth-child(2) { animation-delay: 0.10s; }
+    .tool-card:nth-child(3) { animation-delay: 0.15s; }
+    .tool-card:nth-child(4) { animation-delay: 0.20s; }
+
+    .tool-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(99,179,255,0.25);
+        text-decoration: none; color: var(--text);
+    }
+
+    .tool-icon-wrap {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12));
+        border: 1px solid rgba(99,179,255,0.15);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; margin-bottom: 12px;
+    }
+
+    .tool-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .tool-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    /* ── INFO SECTIONS ── */
+    .info-block {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px; overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .info-block::before {
+        content: ''; display: block; height: 2px;
+        background: var(--ib-grad, linear-gradient(90deg, var(--accent), var(--accent3)));
+    }
+
+    .info-block-body { padding: 28px 32px; }
+
+    .info-block-title {
+        font-size: 20px; font-weight: 800;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, #fff, var(--accent2));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .info-text {
+        color: #94a3b8; font-size: 14px; line-height: 1.8;
+    }
+
+    .info-text p { margin-bottom: 14px; }
+    .info-text p:last-child { margin-bottom: 0; }
+
+    .info-list {
+        padding-left: 0; list-style: none;
+        margin: 14px 0;
+    }
+
+    .info-list li {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 14px;
+        background: rgba(255,255,255,0.02);
+        border-radius: 10px; margin-bottom: 8px;
+        font-size: 13px; color: #94a3b8; line-height: 1.6;
+    }
+
+    .info-list li .li-icon {
+        font-size: 16px; flex-shrink: 0; margin-top: 1px;
+    }
+
+    .info-list li strong { color: var(--text); }
+
+    .video-wrap {
+        border-radius: 12px; overflow: hidden;
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+    }
+
+    .video-wrap iframe { display: block; width: 100%; }
+
+    /* alt links */
+    .alt-link { color: var(--accent2); text-decoration: none; }
+    .alt-link:hover { text-decoration: underline; color: var(--accent); }
+
+    /* ── FOOTER ── */
+    .home-footer {
+        text-align: center; margin-top: 20px;
+        padding-top: 20px; border-top: 1px solid var(--border);
+        font-family: 'Space Mono', monospace;
+        font-size: 11px; color: var(--muted); letter-spacing: 1px;
+    }
+
+    @media (max-width: 700px) {
+        .selects-row { grid-template-columns: 1fr; }
+        .tools-grid { grid-template-columns: 1fr 1fr; }
+        .preview-inner { flex-direction: column; }
+    }
+</style>
+
+<div class="home-page">
+    <div class="blob-tr"></div>
+    <div class="blob-bl"></div>
+
+    <div class="home-content">
+
+        <!-- HEADER -->
+        <div class="home-header">
+            <div class="home-logo">🖼️</div>
+            <div>
+                <div class="home-title">Image Caption Generator</div>
+                <div class="home-subtitle">AI-Powered · Multi-Language · Instant Results</div>
+            </div>
+        </div>
+
+        <!-- UPLOAD CARD -->
+        <div class="upload-card">
+            <div class="upload-card-body">
+                <form method="POST" enctype="multipart/form-data" id="captionForm">
+
+                    <!-- UPLOAD ZONE -->
+                    <label class="upload-label" for="imageInput" id="uploadLabel">
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="upload-icon-wrap">⬆️</div>
+                            <div class="upload-main-text">Drop your image here</div>
+                            <div class="upload-sub-text">or click to browse files</div>
+                            <div class="upload-formats">
+                                <span class="fmt-pill">PNG</span>
+                                <span class="fmt-pill">JPG</span>
+                                <span class="fmt-pill">GIF</span>
+                                <span class="fmt-pill">HEIC</span>
+                                <span class="fmt-pill">WEBP</span>
+                            </div>
+                        </div>
+                    </label>
+
+                    <input type="file" id="imageInput" name="image" accept="image/*" hidden required>
+
+                    <!-- PREVIEW -->
+                    <div class="preview-section" id="previewSection">
+                        <div class="preview-label">📎 Selected File</div>
+                        <div class="preview-inner">
+                            <div class="preview-img-wrap">
+                                <img id="previewImage" src="" alt="Preview">
+                                <span class="preview-badge">PREVIEW</span>
+                            </div>
+                            <div class="preview-info">
+                                <div class="preview-filename" id="fileName">—</div>
+                                <div class="preview-meta">
+                                    Size: <span id="fileSize">—</span><br>
+                                    Type: <span id="fileType">—</span><br>
+                                    Status: <span style="color:#10b981;">✅ Ready</span>
+                                </div>
+                                <div class="btn-clear-file" onclick="clearFile()">✕ Remove</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SELECTS -->
+                    <div class="selects-row">
+                        <div class="select-group">
+                            <label>🎭 Tone</label>
+                            <select name="tone" required>
+                                <option value="Fun">Funny 🎉</option>
+                                <option value="Professional">Professional 💼</option>
+                                <option value="Casual">Casual 😊</option>
+                            </select>
+                        </div>
+                        <div class="select-group">
+                            <label>🌐 Language</label>
+                            <select name="language" required>
+                                <option value="English">English (US)</option>
+                                <option value="Hindi">Hindi 🇮🇳</option>
+                                <option value="Gujarati">Gujarati</option>
+                                <option value="Spanish">Spanish</option>
+                                <option value="French">French</option>
+                                <option value="German">German</option>
+                                <option value="Chinese">Chinese (Simplified)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- GENERATE BTN -->
+                    <button type="submit" class="btn-generate">
+                        ✦ Generate Captions
+                    </button>
+
+                </form>
+            </div>
+        </div>
+
+        <!-- CAPTIONS RESULT -->
+        {% if captions %}
+        <div class="captions-card">
+            <div class="captions-header">
+                <div class="captions-title">
+                    <div class="live-dot"></div>
+                    Generated Captions
+                </div>
+                <span class="captions-count">{{ captions|length }} captions</span>
+            </div>
+            <div class="captions-body">
+                {% for cap in captions %}
+                <div class="caption-item">
+                    <div class="caption-left">
+                        <span class="cap-num">{{ loop.index }}</span>
+                        <span class="cap-text">{{ cap }}</span>
+                    </div>
+                    <div class="cap-actions">
+                        <button type="button" class="btn-speak speak-btn" data-text="{{ cap }}" title="Speak">🔊</button>
+                        <button type="button" class="btn-stop stop-btn" title="Stop">⏹</button>
+                        <button type="button" class="btn-copy-cap" onclick="copyCap(this, '{{ cap | replace("'", "\\'") }}')" title="Copy">📋</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- MORE TOOLS -->
+        <div class="section-header">
+            <div class="section-bar"></div>
+            <div class="section-title-text">More AI Tools</div>
+        </div>
+
+        <div class="tools-grid">
+            <a href="{{ url_for('home') }}" class="tool-card">
+                <div class="tool-icon-wrap">🖼️</div>
+                <div class="tool-name">Caption Generator</div>
+                <div class="tool-desc">Generate captions for images with AI.</div>
+            </a>
+            <a href="{{ url_for('image_to_text') }}" class="tool-card">
+                <div class="tool-icon-wrap">📝</div>
+                <div class="tool-name">Image Description</div>
+                <div class="tool-desc">Generate detailed descriptions.</div>
+            </a>
+            <a href="{{ url_for('image_to_text') }}" class="tool-card">
+                <div class="tool-icon-wrap">🔍</div>
+                <div class="tool-name">Image to Text</div>
+                <div class="tool-desc">Extract readable text from images.</div>
+            </a>
+            <a href="{{ url_for('image_search') }}" class="tool-card">
+                <div class="tool-icon-wrap">🌐</div>
+                <div class="tool-name">Image Search</div>
+                <div class="tool-desc">Search millions of photos online.</div>
+            </a>
+        </div>
+
+        <!-- INFO SECTIONS -->
+        <div class="info-block" style="--ib-grad: linear-gradient(90deg, #3b82f6, #06b6d4);">
+            <div class="info-block-body">
+                <div class="info-block-title">What is the Image Caption Generator?</div>
+                <div class="video-wrap">
+                    <iframe height="300" src="https://www.youtube.com/embed/mulB9c5LqDU?si=S_8Ab4ELT5mEHZRg"
+                        title="YouTube video player" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+                </div>
+                <div class="info-text">
+                    <p>Image Caption Generator uses AI to create compelling captions for your images. Key features include:</p>
+                </div>
+                <ul class="info-list">
+                    <li><span class="li-icon">⚡</span><div><strong>Instant Results:</strong> Generate engaging captions in seconds</div></li>
+                    <li><span class="li-icon">🔓</span><div><strong>No Hassle:</strong> Start using immediately, completely free</div></li>
+                    <li><span class="li-icon">🌍</span><div><strong>Multi-Language:</strong> Create captions in multiple languages</div></li>
+                    <li><span class="li-icon">🎭</span><div><strong>Multiple Tones:</strong> Professional, fun, or casual styles</div></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-block" style="--ib-grad: linear-gradient(90deg, #8b5cf6, #ec4899);">
+            <div class="info-block-body">
+                <div class="info-block-title">Why Image Captions Are Important</div>
+                <ul class="info-list">
+                    <li><span class="li-icon">💬</span><div><strong>Enhancing Context:</strong> Provides essential background information for your images</div></li>
+                    <li><span class="li-icon">📈</span><div><strong>Increasing Engagement:</strong> Increase likes, comments, and shares on social media</div></li>
+                    <li><span class="li-icon">♿</span><div><strong>Improving Accessibility:</strong> Make content inclusive for all users</div></li>
+                    <li><span class="li-icon">🔎</span><div><strong>SEO Optimization:</strong> Improve your website's visibility in search engines</div></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-block" style="--ib-grad: linear-gradient(90deg, #10b981, #06b6d4);">
+            <div class="info-block-body">
+                <div class="info-block-title">How it Works</div>
+                <ul class="info-list">
+                    <li><span class="li-icon">1️⃣</span><div><strong>Upload Your Image:</strong> Drag and drop or select your image file</div></li>
+                    <li><span class="li-icon">2️⃣</span><div><strong>Choose Your Tone:</strong> Select from professional, fun, or casual</div></li>
+                    <li><span class="li-icon">3️⃣</span><div><strong>Select Language:</strong> Choose from several supported languages</div></li>
+                    <li><span class="li-icon">4️⃣</span><div><strong>Generate:</strong> Let our AI analyze and create custom captions</div></li>
+                    <li><span class="li-icon">5️⃣</span><div><strong>Copy & Use:</strong> Copy your favourite caption and use it anywhere</div></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-block" style="--ib-grad: linear-gradient(90deg, #f59e0b, #ef4444);">
+            <div class="info-block-body">
+                <div class="info-block-title">Use Cases</div>
+                <ul class="info-list">
+                    <li><span class="li-icon">📱</span><div><strong>Social Media Posts:</strong> Create scroll-stopping captions for Instagram, Facebook, Twitter</div></li>
+                    <li><span class="li-icon">✍️</span><div><strong>Blog Content:</strong> Enhance articles with descriptive image captions</div></li>
+                    <li><span class="li-icon">🛒</span><div><strong>Ecommerce:</strong> Enhance product listings with compelling descriptions</div></li>
+                    <li><span class="li-icon">♿</span><div><strong>Alt Text:</strong> Improve website accessibility and SEO</div></li>
+                    <li><span class="li-icon">🎓</span><div><strong>Educational Materials:</strong> Create engaging captions for learning resources</div></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <!-- <div class="home-footer">
+            CAPTION AI · IMAGE CAPTION GENERATOR · POWERED BY BLIP AI
+        </div> -->
+
+    </div>
+</div>
+
+<script>
+    // ── FILE UPLOAD PREVIEW ──
+    const imageInput = document.getElementById("imageInput");
+    const previewImage = document.getElementById("previewImage");
+    const previewSection = document.getElementById("previewSection");
+    const uploadLabel = document.getElementById("uploadLabel");
+    const uploadZone = document.getElementById("uploadZone");
+
+    imageInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (file) showPreview(file);
+    });
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            previewImage.src = e.target.result;
+            previewSection.style.display = "block";
+            uploadLabel.style.display = "none";
+            document.getElementById("fileName").textContent = file.name;
+            document.getElementById("fileSize").textContent = (file.size / 1024).toFixed(1) + " KB";
+            document.getElementById("fileType").textContent = file.type;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearFile() {
+        imageInput.value = "";
+        previewSection.style.display = "none";
+        uploadLabel.style.display = "block";
+        previewImage.src = "";
+    }
+
+    // Drag & Drop
+    uploadZone.addEventListener("dragover", (e) => { e.preventDefault(); uploadZone.classList.add("dragging"); });
+    uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("dragging"));
+    uploadZone.addEventListener("drop", (e) => {
+        e.preventDefault(); uploadZone.classList.remove("dragging");
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+            const dt = new DataTransfer(); dt.items.add(file);
+            imageInput.files = dt.files; showPreview(file);
+        }
+    });
+
+    // ── COPY CAPTION ──
+    function copyCap(btn, text) {
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = "✅";
+            setTimeout(() => btn.textContent = "📋", 2000);
+        });
+    }
+
+    // ── TEXT TO SPEECH ──
+    let voices = [];
+    function loadVoices() { voices = window.speechSynthesis.getVoices(); }
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        loadVoices();
+
+        document.querySelectorAll(".speak-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                const text = this.getAttribute("data-text");
+                window.speechSynthesis.cancel();
+                const speech = new SpeechSynthesisUtterance(text);
+                const selectedLanguage = document.querySelector('select[name="language"]').value;
+                let langCode = "en-US";
+                if (selectedLanguage === "Hindi") langCode = "hi-IN";
+                if (selectedLanguage === "Gujarati") langCode = "gu-IN";
+                speech.lang = langCode;
+                const matchedVoice = voices.find(v => v.lang === langCode);
+                if (matchedVoice) speech.voice = matchedVoice;
+                speech.rate = 1; speech.pitch = 1; speech.volume = 1;
+                window.speechSynthesis.speak(speech);
+            });
+        });
+
+        document.querySelectorAll(".stop-btn").forEach(button => {
+            button.addEventListener("click", () => window.speechSynthesis.cancel());
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ target_user.username }}'s History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050810;
+            --surface: #0c1120;
+            --surface2: #111827;
+            --border: rgba(99, 179, 255, 0.12);
+            --accent: #3b82f6;
+            --accent2: #06b6d4;
+            --accent3: #8b5cf6;
+            --danger: #ef4444;
+            --danger2: #ff6b6b;
+            --text: #e2e8f0;
+            --muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blob2 {
+            position: fixed;
+            bottom: -200px;
+            left: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 40px 30px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 50px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px rgba(59,130,246,0.3);
+        }
+
+        .header-title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: var(--accent2);
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: 'Space Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(59,130,246,0.2);
+            border-color: rgba(59,130,246,0.5);
+            transform: translateX(-3px);
+        }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99,179,255,0.25);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--grad);
+        }
+
+        .stat-card:nth-child(1) { --grad: linear-gradient(90deg, var(--accent), var(--accent2)); }
+        .stat-card:nth-child(2) { --grad: linear-gradient(90deg, var(--accent3), #ec4899); }
+        .stat-card:nth-child(3) { --grad: linear-gradient(90deg, #10b981, #06b6d4); }
+        .stat-card:nth-child(4) { --grad: linear-gradient(90deg, #f59e0b, #ef4444); }
+
+        .stat-icon { font-size: 28px; margin-bottom: 12px; }
+        .stat-value { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── USER PROFILE CARD ── */
+        .profile-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent3), var(--accent2));
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(59,130,246,0.3);
+        }
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .profile-meta {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .profile-badge {
+            margin-left: auto;
+            background: rgba(6,182,212,0.1);
+            border: 1px solid rgba(6,182,212,0.25);
+            color: var(--accent2);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+        }
+
+        /* ── SECTION ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .section-title-bar {
+            width: 4px;
+            height: 22px;
+            background: linear-gradient(180deg, var(--accent), var(--accent3));
+            border-radius: 2px;
+        }
+
+        .section-badge {
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: var(--accent2);
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── SEARCH ── */
+        .search-wrap {
+            position: relative;
+            width: 260px;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 14px 9px 36px;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-wrap input:focus { border-color: var(--accent); }
+        .search-wrap input::placeholder { color: var(--muted); }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 50px;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead tr {
+            background: rgba(59,130,246,0.06);
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            padding: 14px 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-align: left;
+            font-weight: 400;
+        }
+
+        th:first-child { width: 70px; text-align: center; }
+        th:last-child { text-align: center; }
+        th.center { text-align: center; }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(99,179,255,0.06);
+            transition: background 0.15s;
+            animation: fadeIn 0.4s ease both;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(59,130,246,0.04); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        tbody tr:nth-child(1) { animation-delay: 0.05s; }
+        tbody tr:nth-child(2) { animation-delay: 0.10s; }
+        tbody tr:nth-child(3) { animation-delay: 0.15s; }
+        tbody tr:nth-child(4) { animation-delay: 0.20s; }
+        tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+        td {
+            padding: 16px 20px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        td:first-child { text-align: center; }
+        td.center { text-align: center; }
+
+        .id-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(99,179,255,0.08);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* ── IMAGE CELL ── */
+        .img-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .img-wrap img {
+            width: 90px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .img-wrap img:hover {
+            transform: scale(1.08);
+            border-color: var(--accent);
+        }
+
+        /* ── TONE BADGE ── */
+        .tone-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+        }
+
+        .tone-professional {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: #60a5fa;
+        }
+
+        .tone-fun {
+            background: rgba(251,191,36,0.12);
+            border: 1px solid rgba(251,191,36,0.25);
+            color: #fbbf24;
+        }
+
+        .tone-default {
+            background: rgba(99,179,255,0.08);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        /* ── LANGUAGE BADGE ── */
+        .lang-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            background: rgba(139,92,246,0.12);
+            border: 1px solid rgba(139,92,246,0.25);
+            color: #a78bfa;
+        }
+
+        /* ── CAPTION TEXT ── */
+        .caption-text {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.6;
+            max-width: 320px;
+            text-align: left;
+        }
+
+        .caption-text span {
+            display: inline-block;
+            background: rgba(255,255,255,0.04);
+            border-left: 2px solid var(--accent3);
+            padding: 4px 8px;
+            border-radius: 0 6px 6px 0;
+            margin: 2px 0;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+
+        /* ── DELETE BTN ── */
+        .btn-delete {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: var(--danger2);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239,68,68,0.2);
+            border-color: rgba(239,68,68,0.4);
+            transform: scale(1.03);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 70px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state .empty-icon { font-size: 52px; margin-bottom: 14px; }
+        .empty-state p {
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="blob2"></div>
+
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-icon">🖼️</div>
+            <div>
+                <div class="header-title">User Caption History</div>
+                <div class="header-subtitle">Admin View · Detailed Records</div>
+            </div>
+        </div>
+        <a class="back-btn" href="{{ url_for('admin') }}">← Back to Panel</a>
+    </div>
+
+    <!-- PROFILE CARD -->
+    <div class="profile-card">
+        <div class="profile-avatar">{{ target_user.username[0].upper() }}</div>
+        <div>
+            <div class="profile-name">{{ target_user.username }}</div>
+            <div class="profile-meta">{{ target_user.email }} · Member Account</div>
+        </div>
+        <div class="profile-badge">{{ captions|length }} record(s)</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">🖼️</div>
+            <div class="stat-value">{{ captions|length }}</div>
+            <div class="stat-label">Total Captions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎭</div>
+            <div class="stat-value">
+                {{ captions | selectattr('tone', 'equalto', 'Professional') | list | length }}
+            </div>
+            <div class="stat-label">Professional</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">😂</div>
+            <div class="stat-value">
+                {{ captions | selectattr('tone', 'equalto', 'Fun') | list | length }}
+            </div>
+            <div class="stat-label">Fun Tone</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-value">
+                {{ captions | map(attribute='language') | unique | list | length }}
+            </div>
+            <div class="stat-label">Languages Used</div>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="section-header">
+        <div class="section-title">
+            <div class="section-title-bar"></div>
+            Caption Records
+            <span class="section-badge">{{ captions|length }} entries</span>
+        </div>
+        <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search captions..." oninput="filterTable()">
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table id="captionTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Image</th>
+                    <th class="center">Tone</th>
+                    <th class="center">Language</th>
+                    <th>Captions</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in captions %}
+                <tr>
+                    <td><span class="id-badge">{{ item.id }}</span></td>
+                    <td>
+                        <div class="img-wrap">
+                            <img src="{{ url_for('static', filename=item.image_path) }}" alt="Upload">
+                        </div>
+                    </td>
+                    <td class="center">
+                        {% if item.tone == 'Professional' %}
+                            <span class="tone-badge tone-professional">💼 Professional</span>
+                        {% elif item.tone == 'Fun' %}
+                            <span class="tone-badge tone-fun">🎉 Fun</span>
+                        {% else %}
+                            <span class="tone-badge tone-default">{{ item.tone }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        <span class="lang-badge">
+                            {% if item.language == 'Hindi' %}🇮🇳
+                            {% elif item.language == 'Gujarati' %}🏳️
+                            {% else %}🌐
+                            {% endif %}
+                            {{ item.language }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="caption-text">
+                            {% for cap in item.captions.split(' | ') %}
+                                <span>{{ cap }}</span><br>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="center">
+                        <a class="btn-delete"
+                           href="{{ url_for('delete_history', id=item.id) }}"
+                           onclick="return confirm('Delete this caption entry?')">
+                            🗑 Delete
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>No caption history found for this user.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        CAPTION AI · ADMIN v2.0 · USER HISTORY VIEW
+    </div>
+
+</div>
+
+<script>
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#captionTable tbody tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+</script>
+
+</body>
+</html>

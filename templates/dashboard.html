@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CaptionAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050810;
+            --surface: #0c1120;
+            --surface2: #111827;
+            --sidebar-w: 260px;
+            --border: rgba(99, 179, 255, 0.12);
+            --accent: #3b82f6;
+            --accent2: #06b6d4;
+            --accent3: #8b5cf6;
+            --text: #e2e8f0;
+            --muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Grid background on main area */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            position: fixed;
+            left: 0; top: 0;
+            width: var(--sidebar-w);
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        /* Subtle sidebar glow */
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: -100px;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            bottom: -100px; right: -50px;
+            width: 250px; height: 250px;
+            background: radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* ── LOGO ── */
+        .sidebar-logo {
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 16px rgba(59,130,246,0.35);
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-version {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: var(--muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        /* ── NAV ── */
+        .sidebar-nav {
+            flex: 1;
+            padding: 18px 12px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            padding: 0 10px;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+
+        .nav-label:first-child { margin-top: 0; }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            color: var(--muted);
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
+            opacity: 0;
+            transition: opacity 0.2s;
+            border-radius: 10px;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .nav-link:hover::before { opacity: 1; }
+
+        .nav-link.active {
+            color: var(--text);
+            background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.08));
+            border: 1px solid rgba(99,179,255,0.15);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 20%; bottom: 20%;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent), var(--accent3));
+            border-radius: 0 2px 2px 0;
+        }
+
+        .nav-icon {
+            width: 32px; height: 32px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .nav-link.active .nav-icon,
+        .nav-link:hover .nav-icon {
+            background: rgba(59,130,246,0.12);
+        }
+
+        .nav-text { flex: 1; }
+
+        .nav-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            background: rgba(59,130,246,0.15);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: var(--accent2);
+            padding: 2px 7px;
+            border-radius: 100px;
+        }
+
+        /* ── SIDEBAR FOOTER ── */
+        .sidebar-footer {
+            padding: 16px 12px;
+            border-top: 1px solid var(--border);
+            position: relative;
+            z-index: 1;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .user-avatar {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .user-info { flex: 1; min-width: 0; }
+
+        .user-name {
+            font-size: 13px; font-weight: 700;
+            color: var(--text);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px; color: var(--muted);
+        }
+
+        .btn-logout {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%;
+            padding: 9px;
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.15);
+            color: #f87171;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.3);
+            color: #fca5a5;
+            text-decoration: none;
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .page-wrapper {
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+
+        .sidebar-nav::-webkit-scrollbar { width: 3px; }
+
+        /* ── MOBILE ── */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .page-wrapper { margin-left: 0; }
+
+            .mobile-toggle {
+                display: flex;
+                position: fixed;
+                top: 16px; left: 16px;
+                z-index: 200;
+                width: 40px; height: 40px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                align-items: center; justify-content: center;
+                cursor: pointer; font-size: 16px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-toggle { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Mobile toggle -->
+<div class="mobile-toggle" onclick="toggleSidebar()">☰</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+        <div class="logo-icon">♾️</div>
+        <div>
+            <div class="logo-text">Caption AI</div>
+            <!-- <div class="logo-version"></div> -->
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+
+        <div class="nav-label">Main</div>
+
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint in ['dashboard', 'home'] %}active{% endif %}">
+            <div class="nav-icon">🏠</div>
+            <span class="nav-text">Home</span>
+        </a>
+
+        <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint == 'history' %}active{% endif %}">
+            <div class="nav-icon">🕒</div>
+            <span class="nav-text">History</span>
+        </a>
+
+        <div class="nav-label">Tools</div>
+
+          <a href="{{ url_for('image_search') }}" class="nav-link {% if request.endpoint == 'image_search' %}active{% endif %}">
+            <div class="nav-icon">🔍</div>
+            <span class="nav-text">Image Search</span>
+        </a>
+
+        <a href="{{ url_for('hashtags') }}" class="nav-link {% if request.endpoint == 'hashtags' %}active{% endif %}">
+            <div class="nav-icon">#️⃣</div>
+            <span class="nav-text">Hashtag Generator</span>
+        </a>
+
+
+        <a href="{{ url_for('image_to_text') }}" class="nav-link {% if request.endpoint == 'image_to_text' %}active{% endif %}">
+            <div class="nav-icon">📄</div>
+            <span class="nav-text">Image to Text</span>
+            <span class="nav-badge">AI</span>
+        </a>
+
+          
+      
+
+        
+      
+    
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar">{{ user[0].upper() if user else 'U' }}</div>
+            <div class="user-info">
+                <div class="user-name">{{ user }}</div>
+                <div class="user-role">
+                    {% if user and user.lower() in ['shrey', 'jainam'] %}
+                        ⭐ Administrator
+                    {% else %}
+                        👤 Member
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">
+            ⭕ Sign Out
+        </a>
+    </div>
+
+</div>
+
+<!-- CONTENT AREA -->
+<div class="page-wrapper">
+    {% block content %}{% endblock %}
+</div>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Close sidebar on outside click (mobile)
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.querySelector('.mobile-toggle');
+        if (window.innerWidth <= 768 &&
+            !sidebar.contains(e.target) &&
+            !toggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+</script>
+
+</body>
+</html>
